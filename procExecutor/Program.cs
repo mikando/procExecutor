@@ -28,14 +28,19 @@ namespace procExecutor
                 {
                     if (createdNew)
                     {
-                        var cts = new CancellationTokenSource();
-                        if (config.TimeOutInMilliSeconds.HasValue)
-                        {
-                            cts.CancelAfter(config.TimeOutInMilliSeconds.Value);
-                        }
                         Console.WriteLine("Executing");
-                        Task.Run(run, cts.Token).GetAwaiter().GetResult();
-                        Console.WriteLine("Executed");
+                        var ts = config.TimeOutInMilliSeconds.HasValue ? TimeSpan.FromMilliseconds(config.TimeOutInMilliSeconds.Value) : TimeSpan.FromDays(1);
+                        Thread t = new Thread(runSTA);
+                        t.Start();
+                        if (!t.Join(ts))
+                        {
+                            t.Abort();
+                            Console.WriteLine("Timeout");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Executed");
+                        }
                     }
                     else
                     {
@@ -47,6 +52,11 @@ namespace procExecutor
             {
                 Console.WriteLine(ex.Message + Environment.NewLine + ex.StackTrace);
             }
+        }
+
+        private static void runSTA()
+        {
+            Task.Run(run).GetAwaiter().GetResult();
         }
 
         private static async Task run()
