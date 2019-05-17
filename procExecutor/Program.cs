@@ -30,7 +30,7 @@ namespace procExecutor
                     {
                         Console.WriteLine("Executing");
                         var ts = config.TimeOutInMilliSeconds.HasValue ? TimeSpan.FromMilliseconds(config.TimeOutInMilliSeconds.Value) : TimeSpan.FromDays(1);
-                        Thread t = new Thread(runSTA);
+                        Thread t = new Thread(()=> Task.Run(run).GetAwaiter().GetResult());
                         t.Start();
                         if (!t.Join(ts))
                         {
@@ -52,11 +52,6 @@ namespace procExecutor
             {
                 Console.WriteLine(ex.Message + Environment.NewLine + ex.StackTrace);
             }
-        }
-
-        private static void runSTA()
-        {
-            Task.Run(run).GetAwaiter().GetResult();
         }
 
         private static async Task run()
